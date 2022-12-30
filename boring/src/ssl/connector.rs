@@ -168,6 +168,21 @@ impl ConnectConfiguration {
         self.verify_hostname = verify_hostname;
     }
 
+    /// Returns an `Ssl` configured to connect to the provided domain.
+    ///
+    /// The domain is used for SNI and hostname verification if enabled.
+    pub fn into_ssl(mut self, domain: &str) -> Result<Ssl, ErrorStack> {
+        if self.sni {
+            self.ssl.set_hostname(domain)?;
+        }
+
+        if self.verify_hostname {
+            setup_verify_hostname(&mut self.ssl, domain)?;
+        }
+
+        Ok(self.ssl)
+    }
+
     /// Initiates a client-side TLS session on a stream.
     ///
     /// The domain is used for SNI and hostname verification if enabled.
