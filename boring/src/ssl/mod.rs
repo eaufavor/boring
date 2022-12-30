@@ -2143,6 +2143,18 @@ impl Ssl {
         }
     }
 
+    pub fn new_from_ref(ctx: &SslContextRef) -> Result<Ssl, ErrorStack> {
+        unsafe {
+            let ptr = cvt_p(ffi::SSL_new(ctx.as_ptr()))?;
+            let mut ssl = Ssl::from_ptr(ptr);
+            SSL_CTX_up_ref(ctx.as_ptr());
+            let ctx_owned = SslContext::from_ptr(ctx.as_ptr());
+            ssl.set_ex_data(*SESSION_CTX_INDEX, ctx_owned);
+
+            Ok(ssl)
+        }
+    }
+
     /// Initiates a client-side TLS handshake.
     ///
     /// This corresponds to [`SSL_connect`].
