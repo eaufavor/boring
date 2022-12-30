@@ -92,6 +92,12 @@ impl From<ErrorStack> for Error {
     }
 }
 
+impl From<ErrorCode> for Error {
+    fn from(code: ErrorCode) -> Error {
+        Error { code, cause: None }
+    }
+}
+
 impl fmt::Display for Error {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
         match self.code {
