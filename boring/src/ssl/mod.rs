@@ -2976,6 +2976,10 @@ where
 }
 
 impl<S: Read + Write> SslStream<S> {
+    pub fn new(ssl: Ssl, stream: S) -> Result<Self, ErrorStack> {
+        Ok(Self::new_base(ssl, stream))
+    }
+
     fn new_base(ssl: Ssl, stream: S) -> Self {
         unsafe {
             let (bio, method) = bio::new(stream).unwrap();
@@ -3092,6 +3096,48 @@ impl<S: Read + Write> SslStream<S> {
     /// [`SSL_set_shutdown`]: https://www.openssl.org/docs/man1.1.1/man3/SSL_set_shutdown.html
     pub fn set_shutdown(&mut self, state: ShutdownState) {
         unsafe { ffi::SSL_set_shutdown(self.ssl.as_ptr(), state.bits()) }
+    }
+
+    /// Initiates a client-side TLS handshake.
+    ///
+    /// # Warning
+    ///
+    /// OpenSSL's default configuration is insecure. It is highly recommended to use
+    /// `SslConnector` rather than `Ssl` directly, as it manages that configuration.
+    pub fn connect(&mut self) -> Result<(), Error> {
+        let ret = unsafe { ffi::SSL_connect(self.ssl.as_ptr()) };
+        if ret > 0 {
+            Ok(())
+        } else {
+            Err(self.make_error(ret))
+        }
+    }
+
+    /// Initiates a server-side TLS handshake.
+    ///
+    /// # Warning
+    ///
+    /// OpenSSL's default configuration is insecure. It is highly recommended to use
+    /// `SslAcceptor` rather than `Ssl` directly, as it manages that configuration.
+    pub fn accept(&mut self) -> Result<(), Error> {
+        let ret = unsafe { ffi::SSL_accept(self.ssl.as_ptr()) };
+        if ret > 0 {
+            Ok(())
+        } else {
+            Err(self.make_error(ret))
+        }
+    }
+
+    /// Initiates the handshake.
+    ///
+    /// This will fail if `set_accept_state` or `set_connect_state` was not called first.
+    pub fn do_handshake(&mut self) -> Result<(), Error> {
+        let ret = unsafe { ffi::SSL_do_handshake(self.ssl.as_ptr()) };
+        if ret > 0 {
+            Ok(())
+        } else {
+            Err(self.make_error(ret))
+        }
     }
 }
 
